@@ -1,6 +1,6 @@
 import { Address, BigInt } from "@graphprotocol/graph-ts";
 import { Token, RewardToken } from "../../generated/schema";
-import { ERC20 } from "../../generated/rocketTokenRETH/ERC20";
+import { _ERC20 } from "../../generated/rocketTokenRETH/_ERC20";
 import { getUsdPricePerToken } from "../prices";
 import {
   BIGDECIMAL_ZERO,
@@ -52,7 +52,7 @@ export function getOrCreateToken(
 }
 
 function fetchTokenName(tokenAddress: Address): string {
-  const tokenContract = ERC20.bind(tokenAddress);
+  const tokenContract = _ERC20.bind(tokenAddress);
   const call = tokenContract.try_name();
   if (call.reverted) {
     return tokenAddress.toHexString();
@@ -62,7 +62,7 @@ function fetchTokenName(tokenAddress: Address): string {
 }
 
 function fetchTokenSymbol(tokenAddress: Address): string {
-  const tokenContract = ERC20.bind(tokenAddress);
+  const tokenContract = _ERC20.bind(tokenAddress);
   const call = tokenContract.try_symbol();
   if (call.reverted) {
     return " ";
@@ -72,12 +72,12 @@ function fetchTokenSymbol(tokenAddress: Address): string {
 }
 
 function fetchTokenDecimals(tokenAddress: Address): number {
-  const tokenContract = ERC20.bind(tokenAddress);
+  const tokenContract = _ERC20.bind(tokenAddress);
   const call = tokenContract.try_decimals();
   if (call.reverted) {
     return 0;
   } else {
-    return call.value;
+    return call.value.toI32();
   }
 }
 

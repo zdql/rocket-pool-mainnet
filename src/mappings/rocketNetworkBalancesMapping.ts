@@ -11,6 +11,8 @@ import {
   ROCKET_TOKEN_RETH_CONTRACT_ADDRESS,
 } from "./../constants/contractconstants";
 import { Address, BigInt } from "@graphprotocol/graph-ts";
+import {getOrCreateProtocol} from '../entities/protocol';
+import {getOrCreatePool} from '../entities/pool';
 
 /**
  * When enough ODAO members votes on a balance and a consensus threshold is reached, the staker beacon chain state is persisted to the smart contracts.
@@ -22,6 +24,9 @@ export function handleBalancesUpdated(event: BalancesUpdated): void {
     protocol = rocketPoolEntityFactory.createRocketPoolProtocol();
   }
   if (protocol === null) return;
+
+  let messari_protocol = getOrCreateProtocol();
+  let messari_pool = getOrCreatePool(event.block.number, event.block.timestamp);
 
   // Preliminary check to ensure we haven't handled this before.
   if (stakerUtilities.hasNetworkStakerBalanceCheckpointHasBeenIndexed(protocol, event)) return;
