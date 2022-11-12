@@ -149,6 +149,8 @@ dataSources:
           file: ./abis/rocketNodeManager.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -282,6 +284,8 @@ dataSources:
           file: ./abis/rocketDAONodeTrusted.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -352,6 +356,8 @@ dataSources:
           file: ./abis/rocketDAOProtocolSettingsMinipoolV2.json
         - name: rocketNodeStaking
           file: ./abis/rocketNodeStaking.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -417,6 +423,8 @@ dataSources:
           file: ./abis/rocketNodeStaking.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -484,6 +492,8 @@ dataSources:
           file: ./abis/rocketNodeStaking.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -547,6 +557,8 @@ dataSources:
           file: ./abis/rocketMinipoolqueue.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -610,6 +622,8 @@ dataSources:
           file: ./abis/rocketDAONodeTrustedActions.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -678,6 +692,8 @@ templates:
           file: ./abis/rocketMinipoolDelegateV1.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################
@@ -740,6 +756,8 @@ templates:
           file: ./abis/rocketMinipoolDelegateV2.json
         - name: rocketNetworkPrices
           file: ./abis/rocketNetworkPrices.json
+        - name: rocketTokenRETH
+          file: ./abis/rocketTokenRETH.json
           ###########################################
         ############## Price Oracle ###############
         ###########################################

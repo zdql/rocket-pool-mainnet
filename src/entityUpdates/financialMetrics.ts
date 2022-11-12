@@ -47,29 +47,30 @@ export function getEthAmountUSDDecimal(
   );
 }
 
-export function updateProtocolAndPoolTvl(
-  block: ethereum.Block,
-  amount: BigInt,
+
+export function updateProtocolAndPoolRewardsTvl(
+  blockNumber: BigInt,
+  blockTimestamp: BigInt,
   rewardAmount: BigInt
 ): void {
-  const pool = getOrCreatePool(block.number, block.timestamp);
+  const pool = getOrCreatePool(blockNumber, blockTimestamp);
   const protocol = getOrCreateProtocol();
 
   const inputTokenBalances: BigInt[] = [];
-  inputTokenBalances.push(pool.inputTokenBalances[0].plus(rewardAmount));
-  inputTokenBalances.push(pool.inputTokenBalances[1].plus(amount));
+  inputTokenBalances.push(rewardAmount);
+  inputTokenBalances.push(pool.inputTokenBalances[1]);
 
   pool.inputTokenBalances = inputTokenBalances;
 
   // inputToken is ETH, price with ETH
 
   const ethTVLUSD = bigIntToBigDecimal(inputTokenBalances[1]).times(
-    getOrCreateToken(Address.fromString(ETH_ADDRESS), block.number)
+    getOrCreateToken(Address.fromString(ETH_ADDRESS), blockNumber)
       .lastPriceUSD!
   );
 
   const rplTVLUSD = bigIntToBigDecimal(inputTokenBalances[0]).times(
-    getOrCreateToken(Address.fromString(RPL_ADDRESS), block.number)
+    getOrCreateToken(Address.fromString(RPL_ADDRESS), blockNumber)
       .lastPriceUSD!
   );
 
@@ -77,17 +78,45 @@ export function updateProtocolAndPoolTvl(
   pool.totalValueLockedUSD = totalValueLockedUSD;
   pool.save();
 
-  // Pool Daily and Hourly
-  // updateSnapshotsTvl(event.block) is called separately when protocol and supply side revenue
-  // metrics are being calculated to consolidate respective revenue metrics into same snapshots
+  // Protocol
+  protocol.totalValueLockedUSD = pool.totalValueLockedUSD;
+  protocol.save();
+
+}
+
+
+export function updateProtocolAndPoolTvl(
+  blockNumber: BigInt,
+  blockTimestamp: BigInt,  
+  amount: BigInt,
+): void {
+  const pool = getOrCreatePool(blockNumber, blockTimestamp);
+  const protocol = getOrCreateProtocol();
+
+  const inputTokenBalances: BigInt[] = [];
+  inputTokenBalances.push(pool.inputTokenBalances[0]);
+  inputTokenBalances.push(amount);
+
+  pool.inputTokenBalances = inputTokenBalances;
+
+  const ethTVLUSD = bigIntToBigDecimal(inputTokenBalances[1]).times(
+    getOrCreateToken(Address.fromString(ETH_ADDRESS), blockNumber)
+      .lastPriceUSD!
+  );
+
+  const rplTVLUSD = bigIntToBigDecimal(inputTokenBalances[0]).times(
+    getOrCreateToken(Address.fromString(RPL_ADDRESS), blockNumber)
+      .lastPriceUSD!
+  );
+
+  const totalValueLockedUSD = ethTVLUSD.plus(rplTVLUSD);
+  pool.totalValueLockedUSD = totalValueLockedUSD;
+  pool.save();
 
   // Protocol
   protocol.totalValueLockedUSD = pool.totalValueLockedUSD;
   protocol.save();
 
-  // Financials Daily
-  // updateSnapshotsTvl(event.block) is called separately when protocol and supply side revenue
-  // metrics are being calculated to consolidate respective revenue metrics into same snapshots
 }
 
 export function updateSnapshotsTvl(block: ethereum.Block): void {

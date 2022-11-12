@@ -145,4 +145,9 @@ function updateNodeRPLBalances(
   ) {
     node.totalRPLSlashed = node.totalRPLSlashed.plus(amount)
   }
+
+
+
+
+
 }

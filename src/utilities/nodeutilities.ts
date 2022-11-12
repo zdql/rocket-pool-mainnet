@@ -8,6 +8,7 @@ import { generalUtilities } from "./generalUtilities";
 import { NetworkNodeBalanceMinipoolMetadata } from "../models/networkNodeBalanceMinipoolMetadata";
 import { ONE_ETHER_IN_WEI } from "../constants/generalconstants";
 import { NetworkNodeBalanceRPLMetadata } from "../models/networkNodeBalanceRPLMetadata";
+import { updateProtocolAndPoolRewardsTvl } from "../entityUpdates/financialMetrics";
 
 class NodeUtilities {
   /**
@@ -154,6 +155,8 @@ class NodeUtilities {
     networkCheckpoint.totalFinalizedMinipools = networkCheckpoint.totalFinalizedMinipools.plus(
       node.totalFinalizedMinipools
     );
+
+    updateProtocolAndPoolRewardsTvl(networkCheckpoint.block, networkCheckpoint.blockTime, networkCheckpoint.effectiveRPLStaked)
   }
 
   /**

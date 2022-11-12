@@ -13,6 +13,8 @@ import { rocketPoolEntityFactory } from './../entityfactory'
 import { ONE_ETHER_IN_WEI } from '../constants/generalconstants'
 import { ZERO_ADDRESS_STRING } from '../constants/contractconstants'
 import { generalUtilities } from './generalutilities'
+import {updateProtocolAndPoolTvl} from '../entityUpdates/financialMetrics'
+
 
 class StakerUtilities {
   /**
@@ -324,6 +326,7 @@ class StakerUtilities {
         BigInt.fromI32(1),
       )
     }
+    updateProtocolAndPoolTvl(networkCheckpoint.block, networkCheckpoint.blockTime, networkCheckpoint.totalStakerETHRewards )
   }
 
   /**

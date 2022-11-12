@@ -99,7 +99,11 @@ class RocketPoolEntityFactory {
     networkBalance.stakersWithAnRETHBalance = BigInt.fromI32(0);
     networkBalance.totalStakerETHRewards = BigInt.fromI32(0);
 
+
     return networkBalance;
+
+
+
   }
 
   /**
