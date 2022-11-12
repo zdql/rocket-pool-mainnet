@@ -8,10 +8,11 @@ import { log, Address, BigDecimal, dataSource, BigInt } from "@graphprotocol/gra
 import { getPriceUsdc as getPriceUsdcSushiswap } from "./routers/SushiSwapRouter";
 import { getTokenPriceFromSushiSwap } from "./calculations/CalculationsSushiswap";
 import { getTokenPriceFromCalculationCurve } from "./calculations/CalculationsCurve";
-import { RETH_ADDRESS, RPL_ADDRESS, ETH_ADDRESS, getStorageAddress, PRICEENCODE } from "../utils/constants";
+import { RETH_ADDRESS, RPL_ADDRESS, ETH_ADDRESS, getStorageAddress, PRICEENCODE, DEFAULT_DECIMALS } from "../utils/constants";
 import {rocketTokenRETH} from '../../generated/rocketTokenRETH/rocketTokenRETH';
 import {rocketNetworkPrices} from '../../generated/rocketNetworkPrices/rocketNetworkPrices';
 import * as utils from './common/utils';
+import { bigIntToBigDecimal } from "../utils/numbers";
 
 export function getUsdPricePerToken(tokenAddr: Address): CustomPriceType {
   // Check if tokenAddr is a NULL Address
@@ -34,7 +35,13 @@ export function getUsdPricePerToken(tokenAddr: Address): CustomPriceType {
       )
       .toBigDecimal();
 
-    const tokenPrice: BigDecimal = getUsdPricePerToken(Address.fromString(ETH_ADDRESS)).usdPrice.div(exchangeRate)
+
+    const ethPrice = getUsdPricePerToken(Address.fromString(ETH_ADDRESS))
+
+    const exchangeRateDiv = exchangeRate.div(ethPrice.decimalsBaseTen.times(ethPrice.decimalsBaseTen))
+
+
+    const tokenPrice: BigDecimal = (ethPrice.usdPrice.div(exchangeRateDiv)).times(ethPrice.decimalsBaseTen)
 
     return CustomPriceType.initialize(
       tokenPrice,
@@ -62,7 +69,7 @@ export function getUsdPricePerToken(tokenAddr: Address): CustomPriceType {
 
     return CustomPriceType.initialize(
       tokenPrice,
-      constants.DEFAULT_USDC_DECIMALS
+      constants.SIXTEEN_DECIMALS
     );    
 
   }
