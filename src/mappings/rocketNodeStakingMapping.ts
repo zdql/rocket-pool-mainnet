@@ -20,6 +20,7 @@ import { Node } from '../../generated/schema'
 import { ethereum } from '@graphprotocol/graph-ts'
 import { generalUtilities } from '../utilities/generalutilities'
 import { rocketPoolEntityFactory } from '../entityfactory'
+import { updateUsageMetrics } from '../entityUpdates/usageMetrics'
 
 /**
  * Occurs when a node operator stakes RPL on his node to collaterize his minipools.
@@ -33,6 +34,7 @@ export function handleRPLStaked(event: RPLStaked): void {
     NODERPLSTAKETRANSACTIONTYPE_STAKED,
     event.params.amount,
   )
+  updateUsageMetrics(event.block, event.params.from)
 }
 
 /**
@@ -47,6 +49,7 @@ export function handleRPLSlashed(event: RPLSlashed): void {
     NODERPLSTAKETRANSACTIONTYPE_SLASHED,
     event.params.amount,
   )
+  updateUsageMetrics(event.block, event.params.node)
 }
 
 /**
@@ -61,6 +64,7 @@ export function handleRPLWithdrawn(event: RPLWithdrawn): void {
     NODERPLSTAKETRANSACTIONTYPE_WITHDRAWAL,
     event.params.amount,
   )
+  updateUsageMetrics(event.block, event.params.to)
 }
 
 /**

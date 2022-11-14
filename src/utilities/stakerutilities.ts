@@ -326,7 +326,6 @@ class StakerUtilities {
         BigInt.fromI32(1),
       )
     }
-    updateProtocolAndPoolTvl(networkCheckpoint.block, networkCheckpoint.blockTime, networkCheckpoint.totalStakerETHRewards )
   }
 
   /**

@@ -23,6 +23,8 @@ import { BigInt, Address, BigDecimal } from '@graphprotocol/graph-ts'
 import { nodeUtilities } from '../utilities/nodeutilities'
 import { EffectiveMinipoolRPLBounds } from '../models/effectiveMinipoolRPLBounds'
 import { ONE_ETHER_IN_WEI } from '../constants/generalconstants'
+import { updateUsageMetrics } from '../entityUpdates/usageMetrics'
+
 
 /**
  * When enough ODAO members submitted their votes and a consensus threshold is reached, a new RPL price is comitted to the smart contracts.
@@ -108,6 +110,7 @@ export function handlePricesUpdated(event: PricesUpdated): void {
   // Update the link so the protocol points to the last network node balance checkpoint.
   protocol.lastNetworkNodeBalanceCheckPoint = checkpoint.id
 
+
   // Add the new network node balance checkpoint to the protocol collection.
   let nodeBalanceCheckpoints = protocol.networkNodeBalanceCheckpoints
   if (nodeBalanceCheckpoints.indexOf(checkpoint.id) == -1)
@@ -118,6 +121,8 @@ export function handlePricesUpdated(event: PricesUpdated): void {
   checkpoint.save()
   if (previousCheckpoint !== null) previousCheckpoint.save()
   protocol.save()
+
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**

@@ -13,6 +13,8 @@ import {
 import { Minipool, Node } from '../../../generated/schema'
 import { rocketPoolEntityFactory } from '../../entityfactory'
 import { rocketMinipoolDelegateV1, rocketMinipoolDelegateV2 } from '../../../generated/templates'
+import {updateUsageMetrics} from '../../entityUpdates/usageMetrics'
+
 
 /**
  * Occurs when a node operator makes an ETH deposit on his node to create a minipool.
@@ -63,6 +65,7 @@ export function handleMinipoolCreatedV2(event: MinipoolCreated): void {
   node.averageFeeForActiveMinipools = getAverageFeeForActiveMinipools(
     nodeMinipools,
   )
+  
 
   // Index the changes to the associated node.
   node.save()
@@ -73,6 +76,9 @@ export function handleMinipoolCreatedV2(event: MinipoolCreated): void {
   } else {
     rocketMinipoolDelegateV2.create(Address.fromString(minipool.id));
   }
+
+  updateUsageMetrics(event.block, event.address)
+
 }
 
 /**
@@ -113,6 +119,9 @@ export function handleMinipoolDestroyedV2(event: MinipoolDestroyed): void {
 
   // Index change to the associated node.
   node.save()
+
+
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**

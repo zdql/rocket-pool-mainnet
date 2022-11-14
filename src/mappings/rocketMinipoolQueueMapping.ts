@@ -1,6 +1,7 @@
 import { BigInt } from '@graphprotocol/graph-ts'
 import { MinipoolDequeued, MinipoolEnqueued } from '../../generated/rocketMinipoolQueue/rocketMinipoolQueue'
 import { Minipool, Node } from '../../generated/schema'
+import { updateUsageMetrics } from '../entityUpdates/usageMetrics'
 
 /**
  * Occurs when a node operator makes an ETH deposit on his node to create a minipool.
@@ -32,6 +33,8 @@ export function handleMinipoolEnqueued(event: MinipoolEnqueued): void {
   // Index the minipool and the associated node.
   minipool.save()
   node.save();
+
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**
@@ -65,4 +68,6 @@ export function handleMinipoolDequeued(event: MinipoolDequeued) : void {
   // Index the minipool and the associated node.
   minipool.save()
   node.save();
+
+  updateUsageMetrics(event.block, event.address)
 }

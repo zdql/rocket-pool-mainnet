@@ -26,6 +26,9 @@ import {
   RPLREWARDCLAIMERTYPE_ODAO,
   RPLREWARDCLAIMERTYPE_NODE,
 } from '../constants/enumconstants'
+import { updateUsageMetrics } from '../entityUpdates/usageMetrics'
+import { updateSnapshotsTvl, updateTotalRewardsMetrics } from '../entityUpdates/financialMetrics'
+
 
 /**
  * Occurs when an eligible stakeholder on the protocol claims an RPL reward.
@@ -233,6 +236,10 @@ export function handleRPLTokensClaimed(event: RPLTokensClaimed): void {
 
   // Index the protocol changes.
   protocol.save()
+
+  updateUsageMetrics(event.block, event.params.claimingAddress)
+  updateTotalRewardsMetrics(event.block, event.params.amount)
+  updateSnapshotsTvl(event.block)
 }
 
 /**

@@ -6,6 +6,7 @@ import {
 } from '../../generated/rocketDAONodeTrustedActions/rocketDAONodeTrustedActions'
 import { Node } from '../../generated/schema'
 import { Address, BigInt } from '@graphprotocol/graph-ts'
+import { updateUsageMetrics } from '../entityUpdates/usageMetrics'
 
 /**
  * Occurs when a node operator has put up an RPL bond, a consensus is reached and he gets voted in as an ODAO member.
@@ -24,6 +25,7 @@ export function handleOracleNodeJoined(event: ActionJoined): void {
     true,
     event.params.time,
   )
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**
@@ -43,6 +45,7 @@ export function handleOracleNodeLeft(event: ActionLeave): void {
     false,
     event.params.time,
   )
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**
@@ -62,6 +65,7 @@ export function handleOracleNodeKicked(event: ActionKick): void {
     false,
     event.params.time,
   )
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**
@@ -83,6 +87,7 @@ export function handleChallengeDecided(event: ActionChallengeDecided) : void {
       event.params.time,
     )
   }
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**

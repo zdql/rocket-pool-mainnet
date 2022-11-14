@@ -3,7 +3,7 @@ import { generalUtilities } from "../utilities/generalutilities";
 import { rocketPoolEntityFactory } from "../entityfactory";
 import { Node, NetworkNodeTimezone } from "../../generated/schema";
 import { rocketNodeManager, NodeRegistered, NodeTimezoneLocationSet } from "../../generated/rocketNodeManager/rocketNodeManager";
-
+import { updateUsageMetrics } from "../entityUpdates/usageMetrics";
 /**
  * Occurs when a node operator registers his address with the RocketPool protocol.
  */
@@ -46,6 +46,8 @@ export function handleNodeRegister(event: NodeRegistered): void {
   node.save();
   nodeTimezone.save();
   protocol.save();
+
+  updateUsageMetrics(event.block, event.params.node)
 }
 
 /**
@@ -88,6 +90,8 @@ export function handleNodeTimezoneChanged(event: NodeTimezoneLocationSet): void 
 
   if (oldNodeTimezone !== null) oldNodeTimezone.save();
   if (newNodeTimezone !== null) newNodeTimezone.save();
+
+  updateUsageMetrics(event.block, event.params.node)
 }
 
 /**

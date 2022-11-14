@@ -6,6 +6,7 @@ import { generalUtilities } from '../utilities/generalutilities'
 import { stakerUtilities } from '../utilities/stakerUtilities'
 import { rocketPoolEntityFactory } from '../entityfactory'
 import { ethereum } from '@graphprotocol/graph-ts'
+import { updateUsageMetrics } from '../entityUpdates/usageMetrics'
 
 /**
  * Occurs when a staker transfer an rETH amount to another staker.
@@ -17,6 +18,8 @@ export function handleTransfer(event: Transfer): void {
     event.params.to,
     event.params.value,
   )
+
+  updateUsageMetrics(event.block, event.params.from)
 }
 
 /**

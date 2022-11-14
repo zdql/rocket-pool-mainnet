@@ -3,7 +3,6 @@ import {
   BigInt,
   BigDecimal,
   ethereum,
-  log,
 } from "@graphprotocol/graph-ts";
 import { bigIntToBigDecimal } from "../utils/numbers";
 import { getOrCreateProtocol } from "../entities/protocol";
@@ -25,28 +24,6 @@ import {
 } from "../utils/constants";
 
 const PROTOCOL_ID = RETH_ADDRESS;
-
-
-export function getEthAmountUSD(
-  amount: BigInt,
-  block: ethereum.Block
-): BigDecimal {
-  return bigIntToBigDecimal(amount).times(
-    getOrCreateToken(Address.fromString(ETH_ADDRESS), block.number)
-      .lastPriceUSD!
-  );
-}
-
-export function getEthAmountUSDDecimal(
-  amount: BigDecimal,
-  block: ethereum.Block
-): BigDecimal {
-  return amount.times(
-    getOrCreateToken(Address.fromString(ETH_ADDRESS), block.number)
-      .lastPriceUSD!
-  );
-}
-
 
 export function updateProtocolAndPoolRewardsTvl(
   blockNumber: BigInt,
@@ -146,10 +123,50 @@ export function updateSnapshotsTvl(block: ethereum.Block): void {
   financialMetrics.save();
 }
 
+
+export function updateTotalRewardsMetrics(
+  block: ethereum.Block,
+  additionalRewards: BigInt
+): void {
+  const pool = getOrCreatePool(block.number, block.timestamp);
+  const protocol = getOrCreateProtocol();
+  const financialMetrics = getOrCreateFinancialDailyMetrics(block);
+  const poolMetricsDailySnapshot = getOrCreatePoolsDailySnapshot(
+    Address.fromString(PROTOCOL_ID),
+    block
+  );
+  const poolMetricsHourlySnapshot = getOrCreatePoolsHourlySnapshot(
+    Address.fromString(PROTOCOL_ID),
+    block
+  );
+
+  const lastRewardPriceUsd = getOrCreateToken(
+    Address.fromString(RPL_ADDRESS),
+    block.number
+  ).lastPriceUSD!;
+
+  poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0] =
+  poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0].plus(additionalRewards);
+
+poolMetricsDailySnapshot.rewardTokenEmissionsUSD![0] = bigIntToBigDecimal(
+  poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0]
+).times(lastRewardPriceUsd);
+poolMetricsDailySnapshot.save();
+poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0] =
+poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0].plus(additionalRewards);
+poolMetricsHourlySnapshot.rewardTokenEmissionsUSD![0] = bigIntToBigDecimal(
+poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0]
+).times(lastRewardPriceUsd);
+poolMetricsHourlySnapshot.save();
+
+financialMetrics.save();
+protocol.save();
+pool.save();
+}
+
 export function updateTotalRevenueMetrics(
   block: ethereum.Block,
-  stakingRewards: BigDecimal,
-  rplStaked: BigInt,
+  additionalRevenue: BigInt,
   totalShares: BigInt // of rETH
 ): void {
   const pool = getOrCreatePool(block.number, block.timestamp);
@@ -164,17 +181,14 @@ export function updateTotalRevenueMetrics(
     block
   );
 
-  let additionalRewards = BIGDECIMAL_ZERO;
+  let additionalRewards = bigIntToBigDecimal(additionalRevenue);
+
+
 
   const lastPriceUsd = getOrCreateToken(
     Address.fromString(ETH_ADDRESS),
     block.number
   ).lastPriceUSD!;
-  const lastRewardPriceUsd = getOrCreateToken(
-    Address.fromString(RPL_ADDRESS),
-    block.number
-  ).lastPriceUSD!;
-
 
   // Pool
   pool.cumulativeTotalRevenueUSD = pool.cumulativeTotalRevenueUSD.plus(
@@ -197,13 +211,6 @@ export function updateTotalRevenueMetrics(
   poolMetricsDailySnapshot.outputTokenSupply = pool.outputTokenSupply;
   poolMetricsDailySnapshot.outputTokenPriceUSD = pool.outputTokenPriceUSD;
   poolMetricsDailySnapshot.stakedOutputTokenAmount = pool.outputTokenSupply;
-
-  poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0] =
-    poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0].plus(rplStaked);
-
-  poolMetricsDailySnapshot.rewardTokenEmissionsUSD![0] = bigIntToBigDecimal(
-    poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0]
-  ).times(lastRewardPriceUsd);
   poolMetricsDailySnapshot.save();
 
   // Pool Hourly
@@ -216,11 +223,7 @@ export function updateTotalRevenueMetrics(
   poolMetricsHourlySnapshot.outputTokenSupply = pool.outputTokenSupply;
   poolMetricsHourlySnapshot.outputTokenPriceUSD = pool.outputTokenPriceUSD;
   poolMetricsHourlySnapshot.stakedOutputTokenAmount = pool.outputTokenSupply;
-  poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0] =
-    poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0].plus(rplStaked);
-  poolMetricsHourlySnapshot.rewardTokenEmissionsUSD![0] = bigIntToBigDecimal(
-    poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0]
-  ).times(lastRewardPriceUsd);
+
   poolMetricsHourlySnapshot.save();
 
   // Protocol
@@ -236,7 +239,7 @@ export function updateTotalRevenueMetrics(
 
 export function updateProtocolSideRevenueMetrics(
   block: ethereum.Block,
-  amount: BigDecimal
+  additionalRevenue: BigDecimal
 ): void {
   const pool = getOrCreatePool(block.number, block.timestamp);
   const protocol = getOrCreateProtocol();
@@ -249,7 +252,7 @@ export function updateProtocolSideRevenueMetrics(
     Address.fromString(PROTOCOL_ID),
     block
   );
-  let additionalRewards = BIGDECIMAL_ZERO;
+  let additionalRewards = additionalRevenue;
 
   const lastPriceUsd = getOrCreateToken(
     Address.fromString(ETH_ADDRESS),

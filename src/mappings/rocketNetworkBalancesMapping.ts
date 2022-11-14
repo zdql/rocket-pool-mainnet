@@ -1,7 +1,7 @@
 import { BalancesUpdated } from "../../generated/rocketNetworkBalances/rocketNetworkBalances";
 import { rocketTokenRETH } from "../../generated/rocketNetworkBalances/rocketTokenRETH";
 import { rocketDepositPool } from "../../generated/rocketNetworkBalances/rocketDepositPool";
-import { Staker, NetworkStakerBalanceCheckpoint, RocketPoolProtocol } from "../../generated/schema";
+import { Staker, NetworkStakerBalanceCheckpoint, RocketPoolProtocol, NetworkNodeBalanceCheckpoint } from "../../generated/schema";
 import { generalUtilities } from "../utilities/generalUtilities";
 import { stakerUtilities } from "../utilities/stakerutilities";
 import { rocketPoolEntityFactory } from "../entityfactory";
@@ -10,9 +10,13 @@ import {
   ROCKET_DEPOSIT_POOL_CONTRACT_ADDRESS,
   ROCKET_TOKEN_RETH_CONTRACT_ADDRESS,
 } from "./../constants/contractconstants";
-import { Address, BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {getOrCreateProtocol} from '../entities/protocol';
 import {getOrCreatePool} from '../entities/pool';
+import { updateUsageMetrics } from "../entityUpdates/usageMetrics";
+import { updateProtocolSideRevenueMetrics, updateSnapshotsTvl, updateSupplySideRevenueMetrics, updateTotalRevenueMetrics, updateProtocolAndPoolTvl } from "../entityUpdates/financialMetrics";
+import { bigIntToBigDecimal } from "../utils/numbers";
+import { BIGDECIMAL_HALF } from "../utils/constants";
 
 /**
  * When enough ODAO members votes on a balance and a consensus threshold is reached, the staker beacon chain state is persisted to the smart contracts.
@@ -25,8 +29,8 @@ export function handleBalancesUpdated(event: BalancesUpdated): void {
   }
   if (protocol === null) return;
 
-  let messari_protocol = getOrCreateProtocol();
-  let messari_pool = getOrCreatePool(event.block.number, event.block.timestamp);
+  getOrCreateProtocol();
+  getOrCreatePool(event.block.number, event.block.timestamp);
 
   // Preliminary check to ensure we haven't handled this before.
   if (stakerUtilities.hasNetworkStakerBalanceCheckpointHasBeenIndexed(protocol, event)) return;
@@ -74,16 +78,22 @@ export function handleBalancesUpdated(event: BalancesUpdated): void {
       previousCheckpoint.nextCheckpointId = checkpoint.id;
     }
   }
+  const balanceCheckpoint = NetworkNodeBalanceCheckpoint.load(protocol.lastNetworkNodeBalanceCheckPoint!)
+  const averageFeeForActiveMinipools = balanceCheckpoint!.averageFeeForActiveMinipools
+  const numActiveMinipools = balanceCheckpoint!.stakingMinipools
+
 
   // Handle the staker impact.
   generateStakerBalanceCheckpoints(
+    event.block,
     protocol.activeStakers,
     checkpoint,
     previousCheckpoint !== null ? previousCheckpoint : null,
     previousRETHExchangeRate,
     event.block.number,
     event.block.timestamp,
-    protocol
+    protocol,
+    averageFeeForActiveMinipools
   );
 
   // If for some reason the running summary totals up to this checkpoint was 0, then we try to set it based on the previous checkpoint.
@@ -110,6 +120,13 @@ export function handleBalancesUpdated(event: BalancesUpdated): void {
   checkpoint.save();
   if (previousCheckpoint !== null) previousCheckpoint.save();
   protocol.save();
+
+  updateUsageMetrics(event.block, event.address)
+
+  const ethTVL = stakerETHInRocketETHContract.plus(numActiveMinipools.times(BigInt.fromI32(32)))
+  updateProtocolAndPoolTvl(event.block.number, event.block.timestamp, ethTVL)
+
+
 }
 
 /**
@@ -118,13 +135,15 @@ export function handleBalancesUpdated(event: BalancesUpdated): void {
  * Create a StakerBalanceCheckpoint
  */
 function generateStakerBalanceCheckpoints(
+  block: ethereum.Block,
   activeStakerIds: Array<string>,
   networkCheckpoint: NetworkStakerBalanceCheckpoint,
   previousCheckpoint: NetworkStakerBalanceCheckpoint | null,
   previousRETHExchangeRate: BigInt,
   blockNumber: BigInt,
   blockTime: BigInt,
-  protocol: RocketPoolProtocol
+  protocol: RocketPoolProtocol,
+  averageFeeForActiveMinipools: BigInt
 ): void {
   // Update grand totals based on previous checkpoint before we do anything.
   stakerUtilities.updateNetworkStakerBalanceCheckpointForPreviousCheckpointAndProtocol(networkCheckpoint, previousCheckpoint, protocol);
@@ -155,6 +174,13 @@ function generateStakerBalanceCheckpoints(
       networkCheckpoint.rETHExchangeRate
     );
     stakerUtilities.handleEthRewardsSincePreviousCheckpoint(ethRewardsSincePreviousCheckpoint, <Staker>staker, networkCheckpoint, protocol);
+    updateTotalRevenueMetrics(block, ethRewardsSincePreviousCheckpoint, networkCheckpoint.totalRETHSupply)
+
+    const protocolRevenue = bigIntToBigDecimal(ethRewardsSincePreviousCheckpoint).times(BIGDECIMAL_HALF.plus(BIGDECIMAL_HALF.times(bigIntToBigDecimal(averageFeeForActiveMinipools))))
+    
+    updateProtocolSideRevenueMetrics(block, protocolRevenue)
+    updateSupplySideRevenueMetrics(block)
+    updateSnapshotsTvl(block)
 
     // Create a new staker balance checkpoint
     let stakerBalanceCheckpoint = rocketPoolEntityFactory.createStakerBalanceCheckpoint(

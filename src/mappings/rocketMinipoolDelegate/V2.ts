@@ -9,7 +9,7 @@ import {
   MINIPOOLSTATUS_WITHDRAWABLE,
 } from '../../constants/enumconstants'
 import { ROCKET_NODE_DEPOSIT_CONTRACT_ADDRESS_V1, ROCKET_NODE_DEPOSIT_CONTRACT_ADDRESS_V2 } from '../../constants/contractconstants'
-
+import {updateUsageMetrics} from '../../entityUpdates/usageMetrics'
 /**
  * Occurs when a node operator makes an ETH deposit on his node to create a minipool.
  */
@@ -34,6 +34,8 @@ export function handleStatusUpdated(event: StatusUpdated): void {
   // Index the minipool and the associated node.
   minipool.save()
   node.save()
+
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**
@@ -71,6 +73,8 @@ export function handleEtherDeposited(event: EtherDeposited): void {
 
   // Index the minipool changes.
   minipool.save()
+
+  updateUsageMetrics(event.block, event.address)
 }
 
 /**
