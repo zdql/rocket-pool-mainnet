@@ -141,6 +141,9 @@ export const BIGDECIMAL_HUNDRED = new BigDecimal(BIGINT_HUNDRED);
 export const BIGDECIMAL_HALF = new BigDecimal(BIGINT_ONE).div(
   new BigDecimal(BIGINT_TWO)
 );
+export const ONE_ETH_IN_WEI = BigInt.fromString("1000000000000000000");
+export const BIGINT_SIXTEEN = (BigInt.fromI32(16)).times(ONE_ETH_IN_WEI)
+export const BIGINT_THIRTYTWO = (BigInt.fromI32(32)).times(ONE_ETH_IN_WEI)
 
 export const MAX_UINT = BigInt.fromI32(2).times(BigInt.fromI32(255));
 
@@ -155,7 +158,6 @@ export const DAYS_PER_YEAR = new BigDecimal(BigInt.fromI32(365));
 export const MS_PER_YEAR = DAYS_PER_YEAR.times(
   new BigDecimal(BigInt.fromI32(24 * 60 * 60 * 1000))
 );
-export const ONE_ETH_IN_WEI = BigInt.fromString("1000000000000000000");
 
 ////////////////
 ///// Misc /////

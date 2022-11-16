@@ -3,6 +3,7 @@ import {
   BigInt,
   BigDecimal,
   ethereum,
+  log
 } from "@graphprotocol/graph-ts";
 import { bigIntToBigDecimal } from "../utils/numbers";
 import { getOrCreateProtocol } from "../entities/protocol";
@@ -70,6 +71,8 @@ export function updateProtocolAndPoolTvl(
   const pool = getOrCreatePool(blockNumber, blockTimestamp);
   const protocol = getOrCreateProtocol();
 
+  log.error('[updateProtocolAndPooLTvl] amount: {}', [amount.toString()])
+
   const inputTokenBalances: BigInt[] = [];
   inputTokenBalances.push(pool.inputTokenBalances[0]);
   inputTokenBalances.push(amount);
@@ -128,8 +131,6 @@ export function updateTotalRewardsMetrics(
   block: ethereum.Block,
   additionalRewards: BigInt
 ): void {
-  const pool = getOrCreatePool(block.number, block.timestamp);
-  const protocol = getOrCreateProtocol();
   const financialMetrics = getOrCreateFinancialDailyMetrics(block);
   const poolMetricsDailySnapshot = getOrCreatePoolsDailySnapshot(
     Address.fromString(PROTOCOL_ID),
@@ -145,23 +146,33 @@ export function updateTotalRewardsMetrics(
     block.number
   ).lastPriceUSD!;
 
-  poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0] =
-  poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0].plus(additionalRewards);
+  log.error('[updateTotalRewardsMetrics] additional Rewards: {}', [additionalRewards.toString()])
 
-poolMetricsDailySnapshot.rewardTokenEmissionsUSD![0] = bigIntToBigDecimal(
-  poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0]
-).times(lastRewardPriceUsd);
-poolMetricsDailySnapshot.save();
-poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0] =
-poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0].plus(additionalRewards);
-poolMetricsHourlySnapshot.rewardTokenEmissionsUSD![0] = bigIntToBigDecimal(
-poolMetricsHourlySnapshot.rewardTokenEmissionsAmount![0]
-).times(lastRewardPriceUsd);
-poolMetricsHourlySnapshot.save();
 
-financialMetrics.save();
-protocol.save();
-pool.save();
+  const newDailyEmissions = poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0].plus(additionalRewards);
+  const newHourlyEmissions = poolMetricsDailySnapshot.rewardTokenEmissionsAmount![0].plus(additionalRewards);
+
+  log.error('[updateTotalRewardsMetrics] lastRewardPriceUsd: {}', [lastRewardPriceUsd.toString()])
+  log.error('[updateTotalRewardsMetrics] newDailyEmissions: {}', [newDailyEmissions.toString()])
+  log.error('[updateTotalRewardsMetrics] newHourlyEmissions: {}', [newHourlyEmissions.toString()])
+
+
+  poolMetricsDailySnapshot.rewardTokenEmissionsAmount = [newDailyEmissions];
+
+  poolMetricsDailySnapshot.rewardTokenEmissionsUSD = [bigIntToBigDecimal(
+    newDailyEmissions
+  ).times(lastRewardPriceUsd)];
+
+  poolMetricsDailySnapshot.save();
+
+  log.error('[updateTotalRewardsMetrics] poolMetrics reward token emissions: {}', [poolMetricsDailySnapshot.rewardTokenEmissionsUSD![0].toString()])
+
+  poolMetricsHourlySnapshot.rewardTokenEmissionsAmount! = [newHourlyEmissions];
+  poolMetricsHourlySnapshot.rewardTokenEmissionsUSD! = [bigIntToBigDecimal(newHourlyEmissions).times(lastRewardPriceUsd)];
+  poolMetricsHourlySnapshot.save();
+
+  financialMetrics.save();
+
 }
 
 export function updateTotalRevenueMetrics(

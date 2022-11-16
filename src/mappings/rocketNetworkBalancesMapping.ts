@@ -10,13 +10,13 @@ import {
   ROCKET_DEPOSIT_POOL_CONTRACT_ADDRESS,
   ROCKET_TOKEN_RETH_CONTRACT_ADDRESS,
 } from "./../constants/contractconstants";
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
 import {getOrCreateProtocol} from '../entities/protocol';
 import {getOrCreatePool} from '../entities/pool';
 import { updateUsageMetrics } from "../entityUpdates/usageMetrics";
 import { updateProtocolSideRevenueMetrics, updateSnapshotsTvl, updateSupplySideRevenueMetrics, updateTotalRevenueMetrics, updateProtocolAndPoolTvl } from "../entityUpdates/financialMetrics";
 import { bigIntToBigDecimal } from "../utils/numbers";
-import { BIGDECIMAL_HALF } from "../utils/constants";
+import { BIGDECIMAL_HALF, BIGINT_SIXTEEN, BIGINT_THIRTYTWO } from "../utils/constants";
 
 /**
  * When enough ODAO members votes on a balance and a consensus threshold is reached, the staker beacon chain state is persisted to the smart contracts.
@@ -80,7 +80,6 @@ export function handleBalancesUpdated(event: BalancesUpdated): void {
   }
   const balanceCheckpoint = NetworkNodeBalanceCheckpoint.load(protocol.lastNetworkNodeBalanceCheckPoint!)
   const averageFeeForActiveMinipools = balanceCheckpoint!.averageFeeForActiveMinipools
-  const numActiveMinipools = balanceCheckpoint!.stakingMinipools
 
 
   // Handle the staker impact.
@@ -123,7 +122,15 @@ export function handleBalancesUpdated(event: BalancesUpdated): void {
 
   updateUsageMetrics(event.block, event.address)
 
-  const ethTVL = stakerETHInRocketETHContract.plus(numActiveMinipools.times(BigInt.fromI32(32)))
+  const queuedMinipools = balanceCheckpoint!.queuedMinipools.times(BIGINT_SIXTEEN)
+  const stakingMinipools = balanceCheckpoint!.stakingMinipools.times(BIGINT_THIRTYTWO)
+  const stakingUnbondedMinipools = balanceCheckpoint!.stakingUnbondedMinipools.times(BIGINT_THIRTYTWO)
+  const withdrawableMinipools = balanceCheckpoint!.withdrawableMinipools.times(BIGINT_THIRTYTWO)
+
+  log.error("[master TVL calculation raw inputs] queuedMinipools: {}, stakingMinipools: {}, stakingUnbondedMinipools: {}, withdrawableMinipools: {} ", [ balanceCheckpoint!.queuedMinipools.toString(),  balanceCheckpoint!.stakingMinipools.toString(),  balanceCheckpoint!.stakingUnbondedMinipools.toString(),   balanceCheckpoint!.withdrawableMinipools.toString()])
+  log.error("[master TVL calculation] queuedMinipools: {}, stakingMinipools: {}, stakingUnbondedMinipools: {}, withdrawableMinipools: {} ", [queuedMinipools.toString(), stakingMinipools.toString(), stakingUnbondedMinipools.toString(),  withdrawableMinipools.toString()])
+
+  const ethTVL = queuedMinipools.plus(stakingMinipools).plus(stakingMinipools).plus(stakingUnbondedMinipools).plus(withdrawableMinipools)
   updateProtocolAndPoolTvl(event.block.number, event.block.timestamp, ethTVL)
 
 
